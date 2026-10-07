@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ex Blure: remove the blur, explore the web</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FFF8E8;--ink:#101426;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171B33;--ink:#F4F1FF}}
+:root[data-theme="dark"]{--bg:#171B33;--ink:#F4F1FF}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Atkinson Hyperlegible",Verdana,system-ui,sans-serif;font-size:1.15rem;line-height:1.5}
+:focus-visible{outline:3px solid #101426;outline-offset:3px;box-shadow:0 0 0 6px #fff}
+.wrap{max-width:900px;margin:0 auto;padding:0 1.25rem}
+.band{padding:4.5rem 0}
+.indigo{background:#1B1A55;color:#fff}.yellow{background:#FFD23F;color:#101426}.coral{background:#FF6B4A;color:#101426}
+.mint{background:#3DDC97;color:#101426}.blue{background:#2B59FF;color:#fff}.ink{background:#101426;color:#fff}.paper{background:var(--bg);color:var(--ink)}
+h2{font-size:clamp(2rem,6vw,3.2rem);line-height:1.05;margin:0 0 .6rem;letter-spacing:-.02em}
+p{margin:.4rem 0 1rem;max-width:40rem}
+button,select{font:inherit;color:inherit}
+.btn{background:#FFD23F;color:#101426;border:3px solid #101426;border-radius:99px;padding:.7rem 1.4rem;font-weight:700;cursor:pointer;box-shadow:4px 4px 0 #101426}
+.btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #101426}
+.card{background:#fff;color:#101426;border-radius:16px;padding:1.1rem 1.25rem}
+.pill{background:transparent;border:3px solid currentColor;border-radius:99px;padding:.5rem 1.1rem;cursor:pointer;font-weight:700;min-height:44px}
+.pill[aria-pressed="true"]{background:#101426;color:#fff;border-color:#101426}
+.ink .pill[aria-pressed="true"],.indigo .pill[aria-pressed="true"],.blue .pill[aria-pressed="true"]{background:#FFD23F;color:#101426;border-color:#FFD23F}
+.row{display:flex;flex-wrap:wrap;gap:.7rem;margin:1.2rem 0}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-top:1rem}
+.ph{background:#fff;color:#44586A;border:2px dashed #9fb6c6;border-radius:16px;min-height:190px;display:flex;align-items:center;justify-content:center;text-align:center;padding:1rem;margin:1.5rem 0;font-size:.95rem}
+.ph b{display:block;color:#101426;font-size:1.05rem}
+/* hero */
+.hero{min-height:100vh;display:flex;align-items:center;overflow:hidden}
+.stack{position:relative;touch-action:pan-y}
+.blurry{filter:blur(var(--b,12px));transition:filter .4s}
+.sharp{position:absolute;inset:0;pointer-events:none;-webkit-mask-image:radial-gradient(circle var(--r,120px) at var(--x,-999px) var(--y,-999px),#000 97%,transparent 100%);mask-image:radial-gradient(circle var(--r,120px) at var(--x,-999px) var(--y,-999px),#000 97%,transparent 100%)}
+.big{font-size:clamp(4.2rem,19vw,10.5rem);line-height:.92;margin:0 0 1rem;letter-spacing:-.04em;color:#FFD23F}
+.tag{font-size:clamp(1.4rem,4.5vw,2.2rem);margin:0 0 1.5rem}
+.hero.clear .blurry{filter:none}.hero.clear .sharp{display:none}
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1rem}
+.stats div{text-align:center;font-weight:700}.stats strong{display:block;font-size:3.2rem;line-height:1}
+/* flip */
+.flip{text-align:left;cursor:pointer;background:#fff;color:#101426;border:3px solid #101426;border-radius:16px;padding:1.1rem 1.25rem;box-shadow:5px 5px 0 #101426;transition:transform .15s}
+.flip:hover{transform:translate(-2px,-3px)}
+.flip .back{display:none;margin-top:.6rem;color:#1B1A55;font-weight:700}
+.flip[aria-pressed="true"] .back{display:block}.flip small{display:block;margin-top:.5rem;color:#44586A}
+/* demo */
+.ctrls{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;background:#fff;color:#101426;border-radius:16px;padding:1rem;margin:1.2rem 0}
+.ctrls button,.ctrls select{background:transparent;border:2px solid #101426;border-radius:10px;padding:.45rem .8rem;cursor:pointer;min-height:44px}
+.ctrls button[aria-pressed="true"]{background:#101426;color:#fff}
+.site{--fs:16px;--bad:#c0392b;--good:#2e8b57;background:#fff;color:#7d8790;border-radius:16px;padding:1.25rem;font-family:Arial,sans-serif;font-size:var(--fs);line-height:1.5}
+.site h3{margin:0 0 .4rem;color:#8a949c;font-size:1.3em}
+.site .r{display:flex;justify-content:space-between;gap:1rem;padding:.4rem 0;border-bottom:1px solid #e6ecf0}
+.site .bad{color:var(--bad);font-weight:700}.site .good{color:var(--good);font-weight:700}
+.site small{display:block;margin-top:.8rem;color:#a2abb2;font-size:.75em}
+.site.contrast{background:#000;color:#fff}.site.contrast h3,.site.contrast small{color:#fff}.site.contrast .r{border-color:#555}
+.site.contrast .bad{color:#ff8a80}.site.contrast .good{color:#8affc1}
+.site[data-cb="red-green"]{--bad:#d55e00;--good:#0072b2}.site[data-cb="blue-yellow"]{--bad:#cc0000;--good:#009e73}
+.site.contrast[data-cb="red-green"] .bad{color:#ffb066}.site.contrast[data-cb="red-green"] .good{color:#7fc8ff}
+.site.bigcur{cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><path d='M6 4l30 18-13 3 8 15-6 3-8-15-9 9z' fill='black' stroke='white' stroke-width='3'/></svg>") 4 4,auto}
+.site.reading [data-read]:hover,.site.reading [data-read]:focus{outline:2px dashed #2B59FF;outline-offset:2px}
+.status{background:#fff;color:#44586A;border-radius:16px;padding:.75rem 1rem;margin-top:1rem;min-height:3em}.status b{color:#101426}
+.mini{display:flex;flex-wrap:wrap;gap:4px}.mini span{font-size:11px;border:1px solid #9fb6c6;padding:2px 5px;border-radius:4px;animation:sh .5s infinite alternate}
+@keyframes sh{from{transform:translate(-1px,0)}to{transform:translate(1px,1px)}}
+.saved b{display:block;font-size:1.8rem;margin-bottom:.3rem}
+.wip{display:inline-block;background:#FFD23F;color:#101426;border-radius:99px;padding:.2rem .8rem;font-weight:700;margin:.25rem .25rem .25rem 0}
+.ink.flash{animation:fl .8s}@keyframes fl{0%,100%{background:#101426}30%{background:#3DDC97}}
+.pull{font-size:clamp(1.8rem,5vw,3rem);line-height:1.1;font-weight:700;margin:1.5rem 0;max-width:20ch}
+input[type=range]{width:100%;height:44px;accent-color:#101426}
+#bar{position:fixed;top:0;left:0;height:6px;width:0;background:#FF6B4A;z-index:9;margin-top:env(safe-area-inset-top,0px)}
+#chap{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);right:12px;z-index:9;background:#fff;color:#101426;border-radius:99px;padding:.2rem .8rem;font-size:.9rem;font-weight:700;opacity:0;transition:opacity .3s}#chap.on{opacity:1}
+.rv{opacity:0;filter:blur(10px);transform:translateY(26px);transition:opacity .6s,filter .6s,transform .6s}.rv.in{opacity:1;filter:none;transform:none}
+footer{padding:2rem 0 3rem;text-align:center}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.rv{opacity:1;filter:none;transform:none}}
+</style></head>
+<body>
+<div id="bar"></div><div id="chap" aria-hidden="true"></div>
+<main>
+
+<header class="band indigo hero" id="hero"><div class="wrap">
+  <div class="stack" id="stack">
+    <div class="blurry"><h1 class="big">Ex Blure</h1><p class="tag">Remove the blur. Explore the web.</p></div>
+    <div class="sharp" aria-hidden="true"><div class="big">Ex Blure</div><p class="tag">Remove the blur. Explore the web.</p></div>
+  </div>
+  <p id="hint">Wave your cursor around to find the words.</p>
+  <button class="btn" id="clear" type="button">Remove the blur</button>
+</div></header>
+
+<section class="band yellow" aria-labelledby="s1"><div class="wrap">
+  <h2 id="s1">A Chrome extension for people with partial sight.</h2>
+  <p>I set out to build smart glasses. Then I talked to students, and everything changed.</p>
+  <div class="ph" role="img" aria-label="Image placeholder: hero screenshot of the extension on a real site"><span>IMAGE<b>The extension on a real site, before and after</b></span></div>
+  <div class="stats" aria-label="Project at a glance">
+    <div><strong data-to="4">0</strong>months</div><div><strong data-to="7">0</strong>weeks research</div><div><strong data-to="2">0</strong>Mathru visits</div><div><strong data-to="6">0</strong>students</div><div><strong data-to="15">0</strong>days to build</div>
+  </div>
+  <p style="margin-top:1.2rem"><b>Solo thesis</b> for the brief "AI at the Apex". Built with JavaScript, HTML, CSS (Tailwind), plus DeepSeek and Cursor for coding help.</p>
+</div></section>
+
+<section class="band blue" aria-labelledby="s2"><div class="wrap">
+  <h2 id="s2">Why this space</h2>
+  <p>Three small moments. Tap each one.</p>
+  <div class="grid3">
+    <button class="flip" type="button" aria-pressed="false"><b>A film</b><small>Love in Sight</small><span class="back">Made me notice obstacles I'd never thought about.</span></button>
+    <button class="flip" type="button" aria-pressed="false"><b>A workplace</b><small>Dr. Reddy's</small><span class="back">Showed how limited accessible infrastructure is in India.</span></button>
+    <button class="flip" type="button" aria-pressed="false"><b>A friend</b><small>Blind in one eye</small><span class="back">A joke about his good side made me see how much I take for granted.</span></button>
+  </div>
+</div></section>
+
+<section class="band paper" aria-labelledby="s3"><div class="wrap">
+  <h2 id="s3">Scrub through the 4 months</h2>
+  <label for="wk">Week <b id="wkn">1</b> of 17 (approximate)</label>
+  <input type="range" id="wk" min="1" max="17" value="1">
+  <div class="card" id="wkout" aria-live="polite"></div>
+</div></section>
+
+<section class="band coral" aria-labelledby="s4"><div class="wrap">
+  <h2 id="s4">The pivot</h2>
+  <div class="row" role="group" aria-label="Pivot steps">
+    <button class="pill" type="button" data-p="0" aria-pressed="true">1. The glasses</button>
+    <button class="pill" type="button" data-p="1" aria-pressed="false">2. Week 3: Mathru</button>
+    <button class="pill" type="button" data-p="2" aria-pressed="false">3. The extension</button>
+  </div>
+  <div id="ppanel" aria-live="polite"></div>
+  <div class="ph" role="img" aria-label="Image placeholder: glasses sketches and Mathru notes, no faces"><span>IMAGE<b>Glasses sketches, or an illustration of the visit (no faces)</b></span></div>
+  <p><small>Photos weren't permitted at Mathru, so these are my notes, not quotes.</small></p>
+</div></section>
+
+<section class="band mint" aria-labelledby="s5"><div class="wrap">
+  <h2 id="s5">The decision that shaped it</h2>
+  <p>One shared family laptop. Many different needs.</p>
+  <div class="row" role="group" aria-label="Compare designs">
+    <button class="pill" type="button" data-d="0" aria-pressed="true">First toolkit</button>
+    <button class="pill" type="button" data-d="1" aria-pressed="false">Saved mode</button>
+  </div>
+  <div class="card" id="dpanel" aria-live="polite"></div>
+  <div class="ph" role="img" aria-label="Image placeholder: real first toolkit vs saved mode screens"><span>IMAGE<b>Real screens: first toolkit vs saved mode</b></span></div>
+</div></section>
+
+<section class="band yellow" aria-labelledby="s6"><div class="wrap">
+  <h2 id="s6">Fix this page</h2>
+  <p>Hard to read on purpose. Use the toolkit like the students did.</p>
+  <div class="ctrls" role="group" aria-label="Toolkit controls">
+    <button type="button" id="smaller" aria-label="Make text smaller">A−</button>
+    <button type="button" id="larger" aria-label="Make text larger">A+</button>
+    <button type="button" id="contrast" aria-pressed="false">High contrast</button>
+    <button type="button" id="hover" aria-pressed="false">Hover to read</button>
+    <button type="button" id="cursor" aria-pressed="false">Large cursor</button>
+    <label>Colors <select id="cb"><option value="none">Off</option><option value="red-green">Red-green</option><option value="blue-yellow">Blue-yellow</option></select></label>
+    <button type="button" id="reset">Reset</button>
+  </div>
+  <article class="site" id="site" aria-label="Sample website">
+    <h3 data-read tabindex="0">City Library: this week</h3>
+    <div class="r"><span data-read tabindex="0">Reading room</span><span class="good" data-read tabindex="0">Open until 8 pm</span></div>
+    <div class="r"><span data-read tabindex="0">Computer lab</span><span class="bad" data-read tabindex="0">Closed today</span></div>
+    <div class="r"><span data-read tabindex="0">Study rooms</span><span class="good" data-read tabindex="0">3 available</span></div>
+    <small data-read tabindex="0">Return books by Friday to avoid a late fee.</small>
+  </article>
+  <div class="status" id="status" aria-live="polite">Turn on Hover to read, then point at any text.</div>
+  <div class="ph" role="img" aria-label="Image placeholder: real extension screenshots"><span>IMAGE<b>Real screenshots: popup, contrast, color filters</b></span></div>
+  <p><small>A demo of the idea, not the extension itself.</small></p>
+</div></section>
+
+<section class="band paper" aria-labelledby="s7"><div class="wrap">
+  <h2 id="s7">What students did</h2>
+  <p>6 students, 2 visits. Tap a card.</p>
+  <div class="grid3">
+    <button class="flip" type="button" aria-pressed="false"><b>Hover to read was the hit.</b><small>No setup, no commands.</small><span class="back">Simple input plus instant feedback wins.</span></button>
+    <button class="flip" type="button" aria-pressed="false"><b>Dark mode plus bigger text</b> was enough for one student.<small>Any website.</small><span class="back">Two basic settings can beat a full toolkit.</span></button>
+    <button class="flip" type="button" aria-pressed="false"><b>The color filter was a hit.</b><small>They watched the colors change.</small><span class="back">Seeing the change made it self-explanatory.</span></button>
+  </div>
+</div></section>
+
+<section class="band ink" id="wipband" aria-labelledby="s8"><div class="wrap">
+  <h2 id="s8">Still fixing</h2>
+  <p><span class="wip">Voice commands</span><span class="wip">Heading detection</span><span class="wip">Multiple saved profiles</span><span class="wip">Magnifier</span></p>
+  <p>The magnifier worked about 1 time in 10. See for yourself.</p>
+  <button class="btn" type="button" id="mag">Try the magnifier</button>
+  <p id="magout" aria-live="polite">Attempts: 0</p>
+  <div class="ph" role="img" aria-label="Image placeholder: the one time the magnifier worked"><span>IMAGE<b>The one time it worked (honest caption)</b></span></div>
+</div></section>
+
+<section class="band blue" aria-labelledby="s9"><div class="wrap">
+  <h2 id="s9">What happened next</h2>
+  <div class="grid3">
+    <div class="card"><b>Faculty</b><br>Liked it, suggested a blue-light filter, an image-removal mode and better tab switching.</div>
+    <div class="card"><b>Open house</b><br>Several visitors asked to use it.</div>
+    <div class="card"><b>Today</b><br>Fixing bugs before sharing it.</div>
+  </div>
+  <div class="ph" role="img" aria-label="Image placeholder: open house photo, no student faces"><span>IMAGE<b>Open house photo (no student faces)</b></span></div>
+  <p>I haven't found another extension that combines these tools for low vision, with saved settings for a shared family laptop.</p>
+</div></section>
+
+<section class="band indigo" aria-labelledby="s10"><div class="wrap">
+  <h2 id="s10">What I learned</h2>
+  <p><b>New can also mean better.</b> Improving what exists is design too.</p>
+  <p><b>Listen first.</b> My best idea came from sitting with students.</p>
+  <p><b>Keep going while still learning.</b></p>
+  <p class="pull" style="color:#FFD23F">Design is a form of care.</p>
+  <p>Next: fix the bugs, finish saved profiles, and one day revisit the glasses.</p>
+</div></section>
+</main>
+<footer class="paper"><div class="wrap">Ex Blure: remove the blur, explore the web.</div></footer>
+
+<script>
+(function(){
+var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches,hero=document.getElementById('hero'),stack=document.getElementById('stack'),hint=document.getElementById('hint');
+function clr(){hero.classList.add('clear');hint.textContent='Clear. That is what the extension is for.'}
+if(reduce)clr();
+stack.addEventListener('pointermove',function(e){var r=stack.getBoundingClientRect();stack.style.setProperty('--x',(e.clientX-r.left)+'px');stack.style.setProperty('--y',(e.clientY-r.top)+'px')});
+stack.addEventListener('pointerleave',function(){stack.style.setProperty('--x','-999px')});
+document.getElementById('clear').onclick=clr;
+addEventListener('keydown',clr);addEventListener('touchstart',clr,{passive:true});
+function sc(){if(scrollY>80)clr()}
+var secs=[].slice.call(document.querySelectorAll('section')),bar=document.getElementById('bar'),chap=document.getElementById('chap');
+function prog(){sc();var h=document.documentElement.scrollHeight-innerHeight;bar.style.width=(h>0?scrollY/h*100:0)+'%';
+ var cur=null;secs.forEach(function(x,i){if(x.getBoundingClientRect().top<innerHeight*.4)cur=[i,x.querySelector('h2')]});
+ if(cur){chap.textContent=String(cur[0]+1).padStart(2,'0')+' \u00b7 '+cur[1].textContent;chap.classList.add('on')}else chap.classList.remove('on')}
+addEventListener('scroll',prog,{passive:true});prog();
+var cnt=[].slice.call(document.querySelectorAll('[data-to]'));
+function run(el){var to=+el.dataset.to,t0=null;function st(t){t0=t0||t;var p=Math.min(1,(t-t0)/900);el.textContent=Math.round(to*p);if(p<1)requestAnimationFrame(st)}reduce?el.textContent=to:requestAnimationFrame(st)}
+if('IntersectionObserver' in window){
+ var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.1});
+ if(!reduce)document.querySelectorAll('section .wrap > *').forEach(function(el){el.classList.add('rv');io.observe(el)});
+ var io2=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){run(e.target);io2.unobserve(e.target)}})});cnt.forEach(function(c){io2.observe(c)});
+}else cnt.forEach(function(c){c.textContent=c.dataset.to});
+document.querySelectorAll('.flip').forEach(function(b){b.onclick=function(){b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true')}});
+var T=[[4,'Brainstorming','Ideas, AI industry leads and workshops.'],[11,'Research','Secondary research led to the glasses. Around week 3 I visited Mathru and changed direction, which stretched research to 7 weeks.'],[13,'Design','Wireframes, and deciding what the extension should do.'],[15,'Build','About 15 days of code. Then the second Mathru visit tested the prototype.'],[17,'Paper','Two weeks writing it up before the Dec 5 submission.']],wk=document.getElementById('wk');
+function tl(){var w=+wk.value,p=T.find(function(x){return w<=x[0]});document.getElementById('wkn').textContent=w;document.getElementById('wkout').innerHTML='<b>'+p[1]+'</b><p style="margin:.3rem 0 0">'+p[2]+'</p>'}wk.oninput=tl;tl();
+var P=['<div class="card"><b>Smart glasses and a voice app.</b><p>Ambitious. But similar products already struggled on cost and adoption, and the hardware was out of reach for a solo project.</p></div>',
+'<div class="grid3"><div class="card"><b>Built for total blindness</b><p>Most tools are expensive or unavailable in India. Many students sit in the gray areas.</p></div><div class="card"><b>Streets weren\u2019t the problem</b><p>Help was usually nearby. (Oldest student: about 13 to 14.)</p></div><div class="card"><b>Screens were hard to enjoy</b><p>Phones and reels were tough. They could hear it, not see it.</p></div></div>',
+'<div class="card"><b>A Chrome extension.</b><p>Something I could build alone, that works on any website. Research stretched to 7 weeks to learn extensions from scratch.</p></div>'],pp=document.getElementById('ppanel');
+function sp(i){pp.innerHTML=P[i];document.querySelectorAll('[data-p]').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.p==i)})}
+document.querySelectorAll('[data-p]').forEach(function(b){b.onclick=function(){sp(+b.dataset.p)}});sp(0);
+var nm='Font size,Font,Spacing,Contrast,Dark,Invert,Grayscale,Red-green,Blue-yellow,Cursor,Cursor color,Read aloud,Voice,Speed,Pitch,Magnifier,Headings,Links,Images,Tabs,Focus'.split(','),
+D=['<div class="mini">'+nm.map(function(n){return'<span>'+n+'</span>'}).join('')+'</div><p><small>Illustrative recreation. Too many buttons, and it needed a helper.</small></p>','<div class="saved"><b>Your setup is saved.</b>Large text, high contrast, read aloud.<p>Set once with a helper. Every new tab opens your way, even after a restart.</p></div>'],dp=document.getElementById('dpanel');
+function sd(i){dp.innerHTML=D[i];document.querySelectorAll('[data-d]').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.d==i)})}
+document.querySelectorAll('[data-d]').forEach(function(b){b.onclick=function(){sd(+b.dataset.d)}});sd(0);
+var tr=0,wb=document.getElementById('wipband');document.getElementById('mag').onclick=function(){tr++;var ok=Math.random()<.1;document.getElementById('magout').textContent='Attempts: '+tr+(ok?'. It worked! That is the screenshot moment.':'. Nothing happened.');if(ok&&!reduce){wb.classList.remove('flash');void wb.offsetWidth;wb.classList.add('flash')}};
+var site=document.getElementById('site'),st=document.getElementById('status'),fs=16,rd=false;
+function pr(id,on){document.getElementById(id).setAttribute('aria-pressed',on)}
+document.getElementById('smaller').onclick=function(){fs=Math.max(12,fs-3);site.style.setProperty('--fs',fs+'px')};
+document.getElementById('larger').onclick=function(){fs=Math.min(40,fs+3);site.style.setProperty('--fs',fs+'px')};
+document.getElementById('contrast').onclick=function(){pr('contrast',site.classList.toggle('contrast'))};
+document.getElementById('cursor').onclick=function(){pr('cursor',site.classList.toggle('bigcur'))};
+document.getElementById('cb').onchange=function(e){e.target.value==='none'?site.removeAttribute('data-cb'):site.setAttribute('data-cb',e.target.value)};
+document.getElementById('hover').onclick=function(){rd=!rd;site.classList.toggle('reading',rd);pr('hover',rd);st.textContent=rd?'On. Point at any text.':'Turn on Hover to read, then point at any text.';if(!rd&&window.speechSynthesis)speechSynthesis.cancel()};
+function say(t){st.innerHTML='Reading: <b>'+t.replace(/</g,'&lt;')+'</b>';if('speechSynthesis' in window){speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(t);u.rate=.95;speechSynthesis.speak(u)}}
+site.querySelectorAll('[data-read]').forEach(function(el){el.addEventListener('mouseenter',function(){if(rd)say(el.textContent)});el.addEventListener('focus',function(){if(rd)say(el.textContent)})});
+document.getElementById('reset').onclick=function(){fs=16;site.className='site';site.style.setProperty('--fs','16px');site.removeAttribute('data-cb');document.getElementById('cb').value='none';['contrast','cursor','hover'].forEach(function(i){pr(i,false)});rd=false;st.textContent='Reset.';if(window.speechSynthesis)speechSynthesis.cancel()};
+})();
+</script>
+</body></html>
