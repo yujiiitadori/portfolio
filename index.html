@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ex Blure: remove the blur, explore the web</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F5F1E8;
+  --ink:#0A0A0A;
+  --blue:#0057FF;
+  --blue-ink:#1a3fa8;
+  --red:#E8392A;
+  --green:#3DDC97;
+  --pin:#C0392B;
+  --tape:#FFF3B0;
+  --grain:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:
+    radial-gradient(ellipse 90% 30% at 12% 4%,  #ffd9c9 0%, transparent 60%),
+    radial-gradient(ellipse 80% 28% at 88% 8%,  #ffe6b8 0%, transparent 62%),
+    radial-gradient(ellipse 100% 30% at 50% 32%, #eef2ff 0%, transparent 65%),
+    radial-gradient(ellipse 90% 30% at 15% 58%, #d8e8ff 0%, transparent 65%),
+    radial-gradient(ellipse 90% 30% at 85% 78%, #ffd9c9 0%, transparent 62%),
+    radial-gradient(ellipse 100% 34% at 50% 100%, #cfe0ff 0%, transparent 70%),
+    var(--paper);
+  background-attachment:fixed;
+  color:var(--ink);
+  font-family:"Atkinson Hyperlegible Next",Verdana,system-ui,sans-serif;
+  font-size:1.1rem;line-height:1.55;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  overflow-x:hidden;
+}
+body::before{
+  content:"";position:fixed;inset:0;background-image:var(--grain);
+  pointer-events:none;z-index:0;mix-blend-mode:multiply;opacity:.9;
+}
+:focus-visible{outline:2.5px dashed var(--blue);outline-offset:4px;border-radius:3px}
+
+/* ------- typography (one font everywhere) ------- */
+h1,h2,h3{font-family:"Atkinson Hyperlegible Next",Verdana,system-ui,sans-serif;font-weight:700;letter-spacing:-.01em}
+h2{font-size:clamp(1.9rem,5vw,3rem);line-height:1.08;margin:0 0 .6rem}
+p{margin:.5rem 0 1rem;max-width:44rem}
+.wrap{max-width:960px;margin:0 auto;padding:0 1.5rem;position:relative;z-index:1}
+.band{padding:5.5rem 0;position:relative;overflow:hidden}
+
+.doodle{position:absolute;color:var(--blue);pointer-events:none;z-index:0}
+.sparkle{color:var(--blue)}
+.stroke{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.stroke.thick{stroke-width:2.6}
+.stroke.dash{stroke-dasharray:5 7}
+
+button,select,input{font:inherit;color:inherit;font-family:inherit}
+.btn{
+  background:transparent;color:var(--ink);border:1.5px solid var(--ink);
+  border-radius:2px;padding:.55rem 1.3rem;cursor:pointer;
+  box-shadow:2px 2px 0 var(--ink);
+}
+.btn:hover{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:2px 2px 0 var(--blue)}
+.pill{
+  background:transparent;border:1.5px solid var(--blue-ink);border-radius:99px;
+  padding:.35rem 1.1rem;cursor:pointer;min-height:40px;color:var(--blue-ink);
+}
+.pill[aria-pressed="true"]{background:var(--blue-ink);color:#fff}
+.row{display:flex;flex-wrap:wrap;gap:.7rem;margin:1.2rem 0}
+
+/* HERO (no button, no hint) */
+.hero{min-height:100vh;display:flex;align-items:center;position:relative}
+.stack{position:relative;touch-action:pan-y;padding:1rem 0}
+.blurry{filter:blur(13px);transition:filter .4s}
+.sharp{
+  position:absolute;inset:0;pointer-events:none;
+  -webkit-mask-image:radial-gradient(circle var(--r,110px) at var(--x,-999px) var(--y,-999px),#000 92%,transparent 100%);
+          mask-image:radial-gradient(circle var(--r,110px) at var(--x,-999px) var(--y,-999px),#000 92%,transparent 100%);
+}
+.big{
+  font-family:"Atkinson Hyperlegible Next",sans-serif;
+  font-weight:700;letter-spacing:-.04em;
+  font-size:clamp(3.5rem,15vw,9rem);line-height:.95;margin:0 0 .5rem;
+}
+.big em{font-style:normal;color:var(--blue)}
+.tag{font-size:clamp(1.3rem,3.4vw,1.9rem);margin:0;color:var(--blue-ink)}
+.hero.clear .blurry{filter:none}
+.hero.clear .sharp{display:none}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1rem;margin-top:1.4rem}
+.stats div{text-align:center;font-size:1.05rem;color:var(--blue-ink);font-weight:700}
+.stats strong{display:block;font-size:2.6rem;line-height:1;color:var(--ink);font-weight:700}
+
+/* POLAROID COLLAGE */
+.collage{position:relative;margin:2.5rem 0 1rem;min-height:560px}
+.snap{
+  position:absolute;width:min(44%,270px);background:#fff;
+  padding:12px 12px 46px;cursor:pointer;border:0;
+  box-shadow:0 8px 18px #0002, 0 2px 4px #0001;
+  transition:transform .4s ease;
+  text-align:left;
+  min-height:260px;
+}
+.snap:nth-child(1){top:0;left:0;transform:rotate(-7deg)}
+.snap:nth-child(2){top:130px;left:32%;transform:rotate(4deg)}
+.snap:nth-child(3){top:30px;right:0;transform:rotate(-3deg)}
+.snap:hover{transform:rotate(0) scale(1.03);z-index:5}
+.snap .face{
+  aspect-ratio:4/3;
+  background:repeating-linear-gradient(45deg,#f7f5ef 0 10px,#efeadf 10px 20px);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--blue-ink);font-size:1.4rem;border:1px solid #0001;
+}
+.snap .cap{position:absolute;left:14px;bottom:12px;font-size:1rem;color:var(--blue-ink);font-weight:700}
+.snap .back{display:none;margin-top:.2rem;font-size:1rem;line-height:1.4;color:var(--ink)}
+.snap.flipped .face{display:none}
+.snap.flipped .back{display:block}
+.clip{position:absolute;top:-18px;left:22px;color:var(--red);width:34px}
+.clip.blue{color:var(--blue);left:auto;right:22px}
+@media(max-width:640px){
+  .collage{min-height:auto;display:flex;flex-direction:column;gap:2rem}
+  .snap{position:static;width:100%;transform:rotate(-2deg)!important;min-height:auto}
+}
+
+/* TIMELINE */
+input[type=range]{width:100%;height:44px;accent-color:var(--blue);margin:.4rem 0}
+#wkout{
+  margin-top:1rem;padding:1.2rem 1.4rem;background:#fff;
+  box-shadow:0 6px 14px #0001, 0 1px 3px #0002;
+  border-left:4px solid var(--blue);
+}
+#wkout b{font-size:1.4rem;color:var(--blue-ink);display:block;margin-bottom:.1rem;font-weight:700}
+
+/* PIVOT */
+.pathline{display:block;width:100%;height:120px;color:var(--blue);margin:1.5rem 0 -1rem;overflow:visible}
+.pathline text{font-family:"Atkinson Hyperlegible Next",sans-serif;font-size:12px;font-weight:700;fill:var(--blue-ink);letter-spacing:.08em}
+.rail{
+  display:flex;gap:2rem;overflow-x:auto;scroll-snap-type:x mandatory;
+  padding:1.5rem .5rem 2rem;scrollbar-width:thin;
+}
+.rail::-webkit-scrollbar{height:6px}
+.rail::-webkit-scrollbar-thumb{background:var(--blue);border-radius:99px}
+.stop{
+  flex:0 0 min(80%,460px);scroll-snap-align:center;
+  padding:1.4rem 1.6rem 1.6rem;background:#fff;position:relative;
+  box-shadow:0 10px 22px #0001, 0 2px 4px #0001;
+}
+.stop::before{
+  content:"";position:absolute;top:-10px;left:50%;transform:translateX(-50%) rotate(-3deg);
+  width:70px;height:18px;background:var(--tape);opacity:.75;
+}
+.stop .num{font-size:1.3rem;color:var(--blue);display:block;line-height:1;margin-bottom:.2rem;font-weight:700}
+.stop h3{font-size:1.3rem;margin:.2rem 0 .5rem}
+.stop p{font-size:1rem;margin:.3rem 0}
+
+/* PINBOARD */
+.board{
+  position:relative;min-height:620px;margin-top:1.5rem;
+  background:#fbfaf6;padding:1rem;
+  background-image:
+    radial-gradient(circle at 20% 30%, #00000005 1px, transparent 1.5px),
+    radial-gradient(circle at 70% 60%, #00000005 1px, transparent 1.5px);
+  background-size:36px 36px, 44px 44px;
+}
+.board .center{
+  position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);
+  background:#fff;border-radius:50%;width:min(42%,240px);aspect-ratio:1;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  padding:1.2rem;font-size:1.1rem;line-height:1.3;font-weight:700;
+  box-shadow:0 12px 28px #0002, inset 0 0 0 1.5px var(--ink);
+  z-index:2;color:var(--blue-ink);
+}
+.board .center::after{
+  content:"";position:absolute;top:8px;right:14px;width:10px;height:10px;
+  border-radius:50%;background:radial-gradient(circle at 30% 30%, #fff, var(--pin));
+}
+.chip{
+  position:absolute;background:#fff;padding:.7rem 1rem .8rem;
+  box-shadow:0 8px 18px #0002, 0 2px 4px #0001;
+  font-size:.9rem;max-width:200px;line-height:1.4;
+}
+.chip::after{
+  content:"";position:absolute;top:-6px;left:50%;transform:translateX(-50%);
+  width:9px;height:9px;border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, #fff 20%, var(--pin));
+  box-shadow:0 1px 2px #0004;
+}
+.chip b{font-size:1rem;font-weight:700;color:var(--ink);display:block;line-height:1.2;margin-bottom:.2rem}
+.chip:nth-of-type(1){top:1%;left:2%}
+.chip:nth-of-type(2){top:5%;right:2%}
+.chip:nth-of-type(3){bottom:14%;left:0}
+.chip:nth-of-type(4){bottom:6%;right:4%}
+.chip:nth-of-type(5){top:44%;left:6%}
+.chip:nth-of-type(6){top:40%;right:5%}
+.board svg.wire{position:absolute;inset:0;width:100%;height:100%;color:var(--ink);z-index:0;pointer-events:none}
+@media(max-width:720px){
+  .board{min-height:auto;display:flex;flex-direction:column;gap:1.2rem}
+  .board .center,.chip{position:static;transform:none;width:auto;max-width:none;border-radius:8px}
+  .board .center{border-radius:50%;width:200px;margin:0 auto}
+  .board svg.wire{display:none}
+}
+
+/* TOOLKIT */
+.ctrls{
+  display:flex;flex-wrap:wrap;gap:.55rem;align-items:center;
+  padding:1rem;margin:1.4rem 0;background:#fff;
+  box-shadow:0 6px 14px #0001, 0 1px 3px #0002;
+}
+.ctrls button,.ctrls select{
+  background:transparent;border:1.5px solid var(--blue-ink);border-radius:2px;
+  padding:.35rem .8rem;cursor:pointer;min-height:40px;color:var(--blue-ink);
+}
+.ctrls button[aria-pressed="true"]{background:var(--blue-ink);color:#fff}
+.site{
+  --fs:16px;--bad:#c0392b;--good:#2e8b57;
+  background:#fff;color:#7d8790;padding:1.4rem;
+  font-size:var(--fs);line-height:1.5;
+  box-shadow:0 10px 24px #0001, 0 2px 4px #0001;
+}
+.site h3{margin:0 0 .4rem;color:#8a949c;font-size:1.3em;font-weight:700}
+.site .r{display:flex;justify-content:space-between;gap:1rem;padding:.45rem 0;border-bottom:1px solid #e6ecf0}
+.site .bad{color:var(--bad);font-weight:700}.site .good{color:var(--good);font-weight:700}
+.site small{display:block;margin-top:.9rem;color:#a2abb2;font-size:.75em}
+.site.contrast{background:#000;color:#fff}
+.site.contrast h3,.site.contrast small{color:#fff}
+.site.contrast .r{border-color:#555}
+.site.contrast .bad{color:#ff8a80}.site.contrast .good{color:#8affc1}
+.site[data-cb="red-green"]{--bad:#d55e00;--good:#0072b2}
+.site[data-cb="blue-yellow"]{--bad:#cc0000;--good:#009e73}
+.site.contrast[data-cb="red-green"] .bad{color:#ffb066}
+.site.contrast[data-cb="red-green"] .good{color:#7fc8ff}
+.site.bigcur{cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><path d='M6 4l30 18-13 3 8 15-6 3-8-15-9 9z' fill='%230057FF' stroke='white' stroke-width='3'/></svg>") 4 4,auto}
+.site.reading [data-read]:hover,.site.reading [data-read]:focus{outline:2px dashed var(--blue);outline-offset:3px}
+.status{padding:.85rem 1.1rem;margin-top:1.2rem;min-height:3em;background:#fff;box-shadow:0 6px 14px #0001, 0 1px 3px #0002;color:var(--blue-ink)}
+
+/* FOLDER STACK — rebuilt for visible tabs */
+.folder-stack{
+  display:flex;flex-direction:column;
+  gap:2.6rem;            /* space between folders, room for tab above each */
+  margin:2rem 0 3rem;
+}
+.folder{
+  position:relative;
+  background:#f4e6c4;
+  padding:1.6rem 1.6rem 1.6rem;cursor:pointer;border:0;
+  box-shadow:0 10px 24px #0002, 0 2px 4px #0001;
+  text-align:left;width:100%;
+  transition:box-shadow .3s;
+  margin-top:34px;       /* reserve space for the tab */
+}
+.folder:nth-of-type(1){background:#f4e6c4}
+.folder:nth-of-type(2){background:#cfe0ff}
+.folder:nth-of-type(3){background:#ffd6cc}
+.folder::before{
+  content:attr(data-tab);
+  position:absolute;
+  top:-34px;left:0;
+  padding:.4rem 1.1rem .35rem;
+  font-size:1rem;font-weight:700;
+  color:var(--ink);
+  border-radius:8px 8px 0 0;
+  white-space:nowrap;
+  background:#f4e6c4;
+  box-shadow:0 -2px 4px #0001;
+  max-width:100%;
+  overflow:hidden;text-overflow:ellipsis;
+}
+.folder:nth-of-type(1)::before{background:#f4e6c4}
+.folder:nth-of-type(2)::before{background:#cfe0ff}
+.folder:nth-of-type(3)::before{background:#ffd6cc}
+.folder[aria-expanded="true"]{
+  box-shadow:0 20px 40px #0003, 0 4px 8px #0002;
+  z-index:5;
+}
+.folder .inner{display:none;margin-top:.6rem;font-size:1rem;color:var(--ink)}
+.folder .inner p{margin:0}
+.folder[aria-expanded="true"] .inner{display:block}
+.folder .hint{font-size:1rem;color:var(--blue-ink);margin-top:.2rem;display:block;font-weight:700}
+
+/* BINDER */
+.binder-scene{background:#3a3d44;padding:3rem 1.5rem;margin-top:1.5rem;border-radius:6px}
+.binder{
+  max-width:520px;margin:0 auto;position:relative;
+  background:#f3f2ed;padding:3rem 2rem 3rem 4.5rem;
+  box-shadow:0 20px 40px #0005, 0 4px 10px #0004;
+}
+.binder::before{
+  content:"";position:absolute;left:.8rem;top:0;bottom:0;width:2.4rem;
+  background-image:radial-gradient(circle at 50% 50%, #3a3d44 7px, transparent 8px);
+  background-size:100% 60px;background-repeat:repeat-y;
+  background-position:center 20px;
+}
+.binder h3{font-size:.95rem;letter-spacing:.15em;text-transform:uppercase;margin:0 0 1rem;font-weight:700}
+.binder ul{list-style:none;padding:0;margin:0;font-size:1rem;line-height:2}
+.binder li{padding-left:1.6rem;position:relative;border-bottom:1px dotted #0003}
+.binder li::before{content:"☐";position:absolute;left:0;font-size:1rem;color:var(--blue-ink)}
+.binder .tape-note{
+  position:absolute;top:-16px;right:2rem;background:var(--tape);
+  padding:.6rem 1rem;font-size:.95rem;font-weight:700;
+  transform:rotate(3deg);box-shadow:0 3px 6px #0003;color:var(--blue-ink);
+  max-width:180px;line-height:1.3;
+}
+.binder .rings{
+  position:absolute;left:-1.4rem;top:2rem;bottom:2rem;width:2.4rem;
+  display:flex;flex-direction:column;justify-content:space-between;pointer-events:none;
+}
+.binder .rings span{
+  width:2.4rem;height:1.6rem;border:2px solid #b9bcc2;border-radius:99px;
+  background:linear-gradient(180deg,#e8eaee,#9ba0a8);
+  box-shadow:inset 0 1px 0 #fff, 0 2px 3px #0006;
+}
+@media(max-width:640px){
+  .binder{padding:2rem 1.2rem 2rem 3rem;font-size:.9rem}
+  .binder .tape-note{right:1rem;max-width:140px}
+}
+
+/* NEXT */
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.4rem;margin-top:1.4rem}
+.note{
+  background:#fff;padding:1.2rem 1.2rem 1.3rem;position:relative;
+  box-shadow:0 8px 20px #0001, 0 2px 4px #0002;
+  font-size:1rem;
+}
+.note b{font-size:1.1rem;display:block;font-weight:700;margin-bottom:.3rem;color:var(--blue-ink)}
+.note::after{
+  content:"";position:absolute;top:-8px;left:50%;transform:translateX(-50%) rotate(-2deg);
+  width:60px;height:16px;background:var(--tape);opacity:.7;
+}
+
+.pull{font-size:clamp(1.8rem,4.5vw,2.6rem);line-height:1.15;font-weight:700;margin:1.6rem 0;max-width:24ch;color:var(--blue)}
+
+#bar{position:fixed;top:0;left:0;height:3px;width:0;background:var(--blue);z-index:20;margin-top:env(safe-area-inset-top,0px)}
+#chap{
+  position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);right:14px;z-index:20;
+  background:#fff;padding:.25rem .9rem;font-size:.9rem;font-weight:700;
+  color:var(--blue-ink);
+  opacity:0;transition:opacity .3s;box-shadow:0 3px 8px #0002;
+}
+#chap.on{opacity:1}
+
+.rv{opacity:0;filter:blur(8px);transform:translateY(20px);transition:opacity .7s,filter .7s,transform .7s}
+.rv.in{opacity:1;filter:none;transform:none}
+
+footer{padding:3rem 0 4rem;text-align:center;font-size:1.05rem;color:var(--blue-ink);font-weight:700}
+
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+  .rv{opacity:1;filter:none;transform:none}
+}
+</style></head>
+<body>
+<div id="bar"></div><div id="chap" aria-hidden="true"></div>
+<main>
+
+<!-- HERO -->
+<header class="band hero" id="hero"><div class="wrap">
+  <div class="stack" id="stack">
+    <div class="blurry">
+      <h1 class="big">Ex <em>Blure</em></h1>
+      <p class="tag">Remove the blur. Explore the web.</p>
+    </div>
+    <div class="sharp" aria-hidden="true">
+      <div class="big">Ex <em>Blure</em></div>
+      <p class="tag">Remove the blur. Explore the web.</p>
+    </div>
+  </div>
+
+  <svg class="doodle sparkle" style="top:6rem;right:4rem;width:60px" viewBox="0 0 60 60" aria-hidden="true">
+    <path d="M30 6 L32 26 L52 30 L32 34 L30 54 L28 34 L8 30 L28 26 Z" fill="currentColor" opacity=".7"/>
+  </svg>
+  <svg class="doodle" style="bottom:8rem;left:1rem;width:120px" viewBox="0 0 120 60" aria-hidden="true">
+    <path class="stroke dash" d="M4 40 Q30 8 60 40 T116 30"/>
+    <path class="stroke" d="M108 24 L118 30 L108 36"/>
+  </svg>
+</div></header>
+
+<!-- S1 : INTRO -->
+<section class="band" aria-labelledby="s1"><div class="wrap">
+  <h2 id="s1">A Chrome extension for people with partial sight.</h2>
+  <p style="font-size:1.4rem;color:var(--blue-ink);max-width:38rem;font-weight:700">I had set out to build smart glasses, until a visit to a school for the blind showed me the real barrier wasn't the world outside — it was the screen in front of them.</p>
+  <div class="stats" aria-label="Project at a glance">
+    <div><strong data-to="4">0</strong>months</div>
+    <div><strong data-to="7">0</strong>weeks research</div>
+    <div><strong data-to="2">0</strong>site visits</div>
+    <div><strong data-to="15">0</strong>days to build</div>
+  </div>
+  <p style="margin-top:1.4rem"><b>Solo thesis</b> for the brief "AI at the Apex". Built with JavaScript, HTML, CSS (Tailwind), plus DeepSeek and Cursor for coding help.</p>
+</div></section>
+
+<!-- S2 : WHY THIS SPACE -->
+<section class="band" aria-labelledby="s2"><div class="wrap">
+  <h2 id="s2">Why this space</h2>
+  <p style="font-size:1.2rem">Three small moments. Tap a photo to flip it over.</p>
+
+  <div class="collage">
+    <button class="snap" type="button" aria-pressed="false">
+      <svg class="clip" viewBox="0 0 34 60" aria-hidden="true"><path d="M17 6 C26 6 30 14 30 22 L30 46 C30 54 24 58 17 58 C10 58 4 54 4 46 L4 20 C4 14 8 10 14 10 C20 10 22 14 22 20 L22 44 C22 48 20 50 17 50 C14 50 12 48 12 44 L12 22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+      <div class="face">a film</div>
+      <p class="cap">A film — Love in Sight</p>
+      <div class="back"><b>Love in Sight.</b> Made me notice obstacles I'd never thought about.</div>
+    </button>
+    <button class="snap" type="button" aria-pressed="false">
+      <svg class="clip blue" viewBox="0 0 34 60" aria-hidden="true"><path d="M17 6 C26 6 30 14 30 22 L30 46 C30 54 24 58 17 58 C10 58 4 54 4 46 L4 20 C4 14 8 10 14 10 C20 10 22 14 22 20 L22 44 C22 48 20 50 17 50 C14 50 12 48 12 44 L12 22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+      <div class="face">a workplace</div>
+      <p class="cap">A workplace — Dr. Reddy's</p>
+      <div class="back"><b>Dr. Reddy's.</b> Showed how limited accessible infrastructure is in India.</div>
+    </button>
+    <button class="snap" type="button" aria-pressed="false">
+      <svg class="clip" viewBox="0 0 34 60" aria-hidden="true"><path d="M17 6 C26 6 30 14 30 22 L30 46 C30 54 24 58 17 58 C10 58 4 54 4 46 L4 20 C4 14 8 10 14 10 C20 10 22 14 22 20 L22 44 C22 48 20 50 17 50 C14 50 12 48 12 44 L12 22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+      <div class="face">a friend</div>
+      <p class="cap">A friend — blind in one eye</p>
+      <div class="back"><b>My friend.</b> A joke about his good side made me see how much I take for granted.</div>
+    </button>
+  </div>
+</div></section>
+
+<!-- S3 : TIMELINE -->
+<section class="band" aria-labelledby="s3"><div class="wrap">
+  <h2 id="s3">Scrub through the 4 months</h2>
+  <label for="wk" style="font-size:1.05rem">Week <b id="wkn" style="color:var(--blue)">1</b> of 17 (approximate)</label>
+  <input type="range" id="wk" min="1" max="17" value="1">
+  <div id="wkout" aria-live="polite"></div>
+</div></section>
+
+<!-- S4 : PIVOT -->
+<section class="band" aria-labelledby="s4"><div class="wrap">
+  <h2 id="s4">The pivot</h2>
+  <p style="font-size:1.2rem">Scroll sideways to follow the path.</p>
+
+  <svg class="pathline" viewBox="0 0 900 120" preserveAspectRatio="none" aria-hidden="true">
+    <path class="stroke dash thick" d="M60 40 Q220 20 380 55 T700 55 T860 40" vector-effect="non-scaling-stroke"/>
+    <g transform="translate(60,40)">
+      <circle r="6" fill="#fff" stroke="currentColor" stroke-width="2"/>
+      <g transform="translate(-14,-46)" stroke="currentColor" stroke-width="1.6" fill="none">
+        <circle cx="0" cy="0" r="7"/><circle cx="20" cy="0" r="7"/>
+        <path d="M7 0 L13 0 M-7 -2 L-14 -6 M27 -2 L34 -6"/>
+      </g>
+      <text y="38">THE GLASSES</text>
+    </g>
+    <g transform="translate(440,55)">
+      <circle r="6" fill="#fff" stroke="currentColor" stroke-width="2"/>
+      <g transform="translate(-16,-50)" stroke="currentColor" stroke-width="1.6" fill="none">
+        <path d="M0 0 L16 -8 L32 0 L16 8 Z"/>
+        <path d="M6 4 L6 14 L26 14 L26 4"/>
+        <path d="M32 0 L32 12"/>
+      </g>
+      <text y="38">THE SITE VISIT</text>
+    </g>
+    <g transform="translate(820,40)">
+      <circle r="6" fill="#fff" stroke="currentColor" stroke-width="2"/>
+      <g transform="translate(-16,-52)" stroke="currentColor" stroke-width="1.6" fill="none">
+        <rect x="0" y="0" width="34" height="24" rx="2"/>
+        <path d="M0 6 L34 6"/>
+        <circle cx="4" cy="3" r=".8" fill="currentColor"/><circle cx="8" cy="3" r=".8" fill="currentColor"/>
+      </g>
+      <text y="38">THE EXTENSION</text>
+    </g>
+    <path class="stroke" d="M180 15 l4 -6 M240 25 l6 -4 M620 20 l-5 -5" stroke-width="1.2" opacity=".7"/>
+  </svg>
+
+  <div class="rail" id="rail" tabindex="0" aria-label="Pivot steps, scroll horizontally">
+    <article class="stop">
+      <span class="num">i.</span>
+      <h3>The glasses</h3>
+      <p>Smart glasses and a voice app. Ambitious. But similar products already struggled on cost and adoption, and the hardware was out of reach for a solo project.</p>
+    </article>
+    <article class="stop">
+      <span class="num">ii.</span>
+      <h3>The site visit</h3>
+      <p>Most tools are built for total blindness — expensive or unavailable in India. Many students sit in the gray areas. Streets weren't the problem; screens were.</p>
+    </article>
+    <article class="stop">
+      <span class="num">iii.</span>
+      <h3>The extension</h3>
+      <p>Something I could build alone, that works on any website. Research stretched to 7 weeks to learn extensions from scratch.</p>
+    </article>
+  </div>
+</div></section>
+
+<!-- S5 : DECISION -->
+<section class="band" aria-labelledby="s5"><div class="wrap">
+  <h2 id="s5">The decision that shaped it</h2>
+  <p style="font-size:1.2rem">One shared family laptop. Many different needs.</p>
+
+  <div class="board">
+    <svg class="wire" viewBox="0 0 800 620" preserveAspectRatio="none" aria-hidden="true">
+      <path class="stroke thick" d="M150 90 Q280 200 380 290" marker-end="url(#arrow)"/>
+      <path class="stroke thick" d="M660 110 Q520 220 420 290" marker-end="url(#arrow)"/>
+      <path class="stroke thick" d="M120 500 Q260 400 390 300" marker-end="url(#arrow)"/>
+      <path class="stroke thick" d="M690 510 Q540 410 410 300" marker-end="url(#arrow)"/>
+      <path class="stroke thick" d="M170 270 Q290 270 385 290" marker-end="url(#arrow)"/>
+      <path class="stroke thick" d="M630 260 Q520 270 415 290" marker-end="url(#arrow)"/>
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+    </svg>
+    <div class="center">one shared<br>family laptop</div>
+    <div class="chip"><b>too many buttons</b>the first toolkit asked a helper to set it up</div>
+    <div class="chip"><b>no setup</b>hover to read, on any website</div>
+    <div class="chip"><b>set once</b>saved settings persist across tabs</div>
+    <div class="chip"><b>dark + bigger text</b>enough for one student</div>
+    <div class="chip"><b>colour filter</b>they watched the colours change</div>
+    <div class="chip"><b>no commands</b>simple input, instant feedback</div>
+  </div>
+</div></section>
+
+<!-- S6 : TOOLKIT -->
+<section class="band" aria-labelledby="s6"><div class="wrap">
+  <h2 id="s6">Try the extension</h2>
+  <p>Hard to read on purpose. Use the toolkit like the students did.</p>
+  <div class="ctrls" role="group" aria-label="Toolkit controls">
+    <button type="button" id="smaller" aria-label="Make text smaller">A−</button>
+    <button type="button" id="larger" aria-label="Make text larger">A+</button>
+    <button type="button" id="contrast" aria-pressed="false">High contrast</button>
+    <button type="button" id="hover" aria-pressed="false">Hover to read</button>
+    <button type="button" id="cursor" aria-pressed="false">Large cursor</button>
+    <label>Colors <select id="cb"><option value="none">Off</option><option value="red-green">Red-green</option><option value="blue-yellow">Blue-yellow</option></select></label>
+    <button type="button" id="reset">Reset</button>
+  </div>
+  <article class="site" id="site" aria-label="Sample website">
+    <h3 data-read tabindex="0">City Library: this week</h3>
+    <div class="r"><span data-read tabindex="0">Reading room</span><span class="good" data-read tabindex="0">Open until 8 pm</span></div>
+    <div class="r"><span data-read tabindex="0">Computer lab</span><span class="bad" data-read tabindex="0">Closed today</span></div>
+    <div class="r"><span data-read tabindex="0">Study rooms</span><span class="good" data-read tabindex="0">3 available</span></div>
+    <small data-read tabindex="0">Return books by Friday to avoid a late fee.</small>
+  </article>
+  <div class="status" id="status" aria-live="polite">Turn on Hover to read, then point at any text.</div>
+  <p style="margin-top:1rem"><small>A demo of the idea, not the extension itself.</small></p>
+</div></section>
+
+<!-- S7 : FOLDER STACK -->
+<section class="band" aria-labelledby="s7"><div class="wrap">
+  <h2 id="s7">What students did</h2>
+  <p style="font-size:1.2rem">Three folders. Open one.</p>
+
+  <div class="folder-stack">
+    <button class="folder" type="button" aria-expanded="false" data-tab="they watch the colours change">
+      <span class="hint">open folder ↓</span>
+      <div class="inner"><p><b>The colour filter was a hit.</b> Seeing the change made it self-explanatory — no instructions needed.</p></div>
+    </button>
+    <button class="folder" type="button" aria-expanded="false" data-tab="on every website">
+      <span class="hint">open folder ↓</span>
+      <div class="inner"><p><b>Dark mode plus bigger text</b> was enough for one student. Two basic settings, any website — that beat a full toolkit.</p></div>
+    </button>
+    <button class="folder" type="button" aria-expanded="false" data-tab="with no commands or experience">
+      <span class="hint">open folder ↓</span>
+      <div class="inner"><p><b>Hover to read was the hit.</b> No setup, no commands. Simple input plus instant feedback wins.</p></div>
+    </button>
+  </div>
+</div></section>
+
+<!-- S8 : TO-FIX BINDER -->
+<section class="band" aria-labelledby="s8"><div class="wrap">
+  <h2 id="s8">Still fixing</h2>
+  <div class="binder-scene">
+    <div class="binder">
+      <div class="rings" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <div class="tape-note">still fixing<br>these before<br>share day</div>
+      <h3>To-fix list / v0.3</h3>
+      <ul>
+        <li>Voice commands</li>
+        <li>Heading detection</li>
+        <li>Multiple saved profiles</li>
+        <li>Magnifier — never quite worked, needs a rethink</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<!-- S9 : NEXT -->
+<section class="band" aria-labelledby="s9"><div class="wrap">
+  <h2 id="s9">What happened next</h2>
+  <div class="grid3">
+    <div class="note"><b>Faculty</b>Liked it, suggested a blue-light filter, an image-removal mode and better tab switching.</div>
+    <div class="note"><b>Open house</b>Several visitors asked to use it.</div>
+    <div class="note"><b>Today</b>Fixing bugs before sharing it.</div>
+  </div>
+  <p style="margin-top:1.4rem">I haven't found another extension that combines these tools for low vision, with saved settings for a shared family laptop.</p>
+</div></section>
+
+<!-- S10 : LEARNED -->
+<section class="band" aria-labelledby="s10"><div class="wrap">
+  <h2 id="s10">What I learned</h2>
+  <p><b>New can also mean better.</b> Improving what exists is design too.</p>
+  <p><b>Listen first.</b> My best idea came from sitting with students.</p>
+  <p><b>Keep going while still learning.</b></p>
+  <p class="pull">Design is a form of care.</p>
+  <p>Next: fix the bugs, finish saved profiles, and one day revisit the glasses.</p>
+</div></section>
+
+</main>
+<footer><div class="wrap">Ex Blure — remove the blur, explore the web.</div></footer>
+
+<script>
+(function(){
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hero = document.getElementById('hero');
+  var stack = document.getElementById('stack');
+
+  if(reduce) hero.classList.add('clear');
+
+  stack.addEventListener('pointermove', function(e){
+    var r = stack.getBoundingClientRect();
+    stack.style.setProperty('--x', (e.clientX - r.left) + 'px');
+    stack.style.setProperty('--y', (e.clientY - r.top) + 'px');
+  });
+  stack.addEventListener('pointerleave', function(){
+    stack.style.setProperty('--x', '-999px');
+  });
+  // keyboard/touch still clears the blur
+  addEventListener('keydown', function(){ hero.classList.add('clear'); });
+  addEventListener('touchstart', function(){ hero.classList.add('clear'); }, {passive:true});
+
+  var secs = [].slice.call(document.querySelectorAll('section'));
+  var bar = document.getElementById('bar');
+  var chap = document.getElementById('chap');
+  function prog(){
+    var h = document.documentElement.scrollHeight - innerHeight;
+    bar.style.width = (h > 0 ? scrollY / h * 100 : 0) + '%';
+    var cur = null;
+    secs.forEach(function(x, i){
+      if(x.getBoundingClientRect().top < innerHeight * 0.4) cur = [i, x.querySelector('h2')];
+    });
+    if(cur && cur[1]){
+      chap.textContent = String(cur[0] + 1).padStart(2,'0') + ' · ' + cur[1].textContent.trim();
+      chap.classList.add('on');
+    } else chap.classList.remove('on');
+  }
+  addEventListener('scroll', prog, {passive:true});
+  prog();
+
+  var cnt = [].slice.call(document.querySelectorAll('[data-to]'));
+  function run(el){
+    var to = +el.dataset.to, t0 = null;
+    function st(t){
+      t0 = t0 || t;
+      var p = Math.min(1, (t - t0) / 900);
+      el.textContent = Math.round(to * p);
+      if(p < 1) requestAnimationFrame(st);
+    }
+    reduce ? el.textContent = to : requestAnimationFrame(st);
+  }
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, {threshold:.1});
+    if(!reduce) document.querySelectorAll('section .wrap > *').forEach(function(el){
+      el.classList.add('rv'); io.observe(el);
+    });
+    var io2 = new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting){ run(e.target); io2.unobserve(e.target); } });
+    });
+    cnt.forEach(function(c){ io2.observe(c); });
+  } else {
+    cnt.forEach(function(c){ c.textContent = c.dataset.to; });
+  }
+
+  document.querySelectorAll('.snap').forEach(function(b){
+    b.addEventListener('click', function(){
+      var on = b.classList.toggle('flipped');
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  });
+
+  var T = [
+    [4, 'Brainstorming', 'Ideas, AI industry leads and workshops.'],
+    [11, 'Research', 'Secondary research led to the glasses. Around week 3 I visited a school for the blind and changed direction, which stretched research to 7 weeks.'],
+    [13, 'Design', 'Wireframes, and deciding what the extension should do.'],
+    [15, 'Build', 'About 15 days of code. Then the second site visit tested the prototype.'],
+    [17, 'Paper', 'Two weeks writing it up before the Dec 5 submission.']
+  ];
+  var wk = document.getElementById('wk');
+  function tl(){
+    var w = +wk.value;
+    var p = T.find(function(x){ return w <= x[0]; });
+    document.getElementById('wkn').textContent = w;
+    document.getElementById('wkout').innerHTML = '<b>' + p[1] + '</b><p style="margin:.3rem 0 0">' + p[2] + '</p>';
+  }
+  wk.oninput = tl; tl();
+
+  document.querySelectorAll('.folder').forEach(function(f){
+    f.addEventListener('click', function(){
+      var open = f.getAttribute('aria-expanded') === 'true';
+      document.querySelectorAll('.folder').forEach(function(o){ o.setAttribute('aria-expanded','false'); });
+      f.setAttribute('aria-expanded', open ? 'false' : 'true');
+      var h = f.querySelector('.hint');
+      if(h) h.textContent = open ? 'open folder ↓' : 'close folder ↑';
+    });
+  });
+
+  var site = document.getElementById('site');
+  var st = document.getElementById('status');
+  var fs = 16, rd = false;
+  function pr(id, on){ document.getElementById(id).setAttribute('aria-pressed', on); }
+  document.getElementById('smaller').onclick = function(){ fs = Math.max(12, fs - 3); site.style.setProperty('--fs', fs + 'px'); };
+  document.getElementById('larger').onclick  = function(){ fs = Math.min(40, fs + 3); site.style.setProperty('--fs', fs + 'px'); };
+  document.getElementById('contrast').onclick = function(){ pr('contrast', site.classList.toggle('contrast')); };
+  document.getElementById('cursor').onclick   = function(){ pr('cursor', site.classList.toggle('bigcur')); };
+  document.getElementById('cb').onchange = function(e){
+    if(e.target.value === 'none') site.removeAttribute('data-cb');
+    else site.setAttribute('data-cb', e.target.value);
+  };
+  document.getElementById('hover').onclick = function(){
+    rd = !rd;
+    site.classList.toggle('reading', rd);
+    pr('hover', rd);
+    st.textContent = rd ? 'On. Point at any text.' : 'Turn on Hover to read, then point at any text.';
+    if(!rd && window.speechSynthesis) speechSynthesis.cancel();
+  };
+  function say(t){
+    st.innerHTML = 'Reading: <b>' + t.replace(/</g,'&lt;') + '</b>';
+    if('speechSynthesis' in window){
+      speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(t);
+      u.rate = .95;
+      speechSynthesis.speak(u);
+    }
+  }
+  site.querySelectorAll('[data-read]').forEach(function(el){
+    el.addEventListener('mouseenter', function(){ if(rd) say(el.textContent); });
+    el.addEventListener('focus',      function(){ if(rd) say(el.textContent); });
+  });
+  document.getElementById('reset').onclick = function(){
+    fs = 16;
+    site.className = 'site';
+    site.style.setProperty('--fs', '16px');
+    site.removeAttribute('data-cb');
+    document.getElementById('cb').value = 'none';
+    ['contrast','cursor','hover'].forEach(function(i){ pr(i, false); });
+    rd = false;
+    st.textContent = 'Reset.';
+    if(window.speechSynthesis) speechSynthesis.cancel();
+  };
+})();
+</script>
+</body></html>
